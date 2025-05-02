@@ -3,6 +3,7 @@ from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import uuid
+from aiogram.exceptions import TelegramBadRequest
 
 import config
 from db import get_subscription, add_payment
@@ -48,3 +49,38 @@ async def cmd_start(message: types.Message):
         inline_keyboard=[[InlineKeyboardButton(text="Оплатить ₽", url=pay_url)]]
     )
     await message.answer("Перейди по ссылке для оплаты:", reply_markup=kb)
+
+
+# Handler to check bot's rights in the channel
+@router.message(Command("check_rights"))
+async def cmd_check_rights(message: types.Message):
+    bot_user = await message.bot.get_me()
+    info = await message.bot.get_chat_member(
+        chat_id=config.CHANNEL_ID, user_id=bot_user.id
+    )
+    can_ban = getattr(info, "can_restrict_members", False)
+    can_invite = getattr(info, "can_invite_users", False)
+    await message.answer(
+        f"Права бота в канале:\n"
+        f"• Может удалять (ban): {can_ban}\n"
+        f"• Может приглашать: {can_invite}"
+    )
+
+
+# Test handler to ban and unban the invoking user (self-test)
+@router.message(Command("test_kick"))
+async def cmd_test_kick(message: types.Message):
+    user_id = message.from_user.id
+    try:
+        # Ban and immediately unban to remove from channel
+        await message.bot.ban_chat_member(chat_id=config.CHANNEL_ID, user_id=user_id)
+        await message.bot.unban_chat_member(chat_id=config.CHANNEL_ID, user_id=user_id)
+        await message.answer(
+            "✅ Тестовое удаление выполнено, вы удалены и восстановлены в канале."
+        )
+    except TelegramBadRequest as e:
+        # If user is admin, cannot ban
+        if "administrator" in e.message.lower():
+            await message.answer("⚠️ Невозможно удалить администратора канала.")
+        else:
+            await message.answer(f"Ошибка при попытке удаления: {e.message}")
