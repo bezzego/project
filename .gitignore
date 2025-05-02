@@ -1,0 +1,33 @@
+# Файлы окружения и секреты
+.env
+*.env
+
+# Виртуальное окружение
+venv/
+env/
+.venv/
+
+# Базы данных и логи
+data/*.db
+data/*.sqlite3
+data/*.log
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.temp
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Системные файлы
+.DS_Store
+Thumbs.db
