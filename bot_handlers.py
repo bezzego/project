@@ -18,6 +18,7 @@ async def cmd_start(message: types.Message):
     sub = get_subscription(user_id)
     from datetime import datetime
 
+
     if sub and sub["end_ts"] > int(time.time()):
         end = datetime.fromtimestamp(sub["end_ts"]).strftime("%d.%m.%Y %H:%M")
         text = f"✅ Ваша подписка активна до {end}.\n\nХотите продлить подписку?"
@@ -54,6 +55,9 @@ async def cmd_start(message: types.Message):
                 )
             ],
             [InlineKeyboardButton(text=button_text, url=pay_url)],
+
+            [InlineKeyboardButton(text="📆 Статус подписки", callback_data="subscription_status")],
+            [InlineKeyboardButton(text=button_text, url=pay_url)]
         ]
     )
     await message.answer("Выберите действие:", reply_markup=kb)
@@ -125,6 +129,12 @@ async def cb_subscription_status(callback: types.CallbackQuery):
     pay_url = qp.base_url
     add_payment(user_id, label, config.SUB_PRICE)
     kb = InlineKeyboardMarkup(
+
         inline_keyboard=[[InlineKeyboardButton(text=button_text, url=pay_url)]]
+
+        inline_keyboard=[
+            [InlineKeyboardButton(text=button_text, url=pay_url)]
+        ]
+
     )
     await callback.message.edit_text(text, reply_markup=kb)

@@ -58,13 +58,19 @@ async def payment_checker():
                                 f"Вступай в канал по ссылке:\n{link.invite_link}\n"
                                 "Нажми /start, чтобы продлить или посмотреть статус подписки"
                             ),
+                            )
+
                         )
                         logging.info(f"Пользователь {user_id} оплатил, ссылка выдана.")
                         break
             except requests.exceptions.RequestException as e:
+
                 logging.warning(
                     f"[payment_checker] Ошибка сети при проверке {label}: {e}"
                 )
+
+                logging.warning(f"[payment_checker] Ошибка сети при проверке {label}: {e}")
+
         await asyncio.sleep(config.CHECK_INTERVAL)
 
 
@@ -83,9 +89,13 @@ async def subscription_cleaner():
                 )
                 logging.info(f"Подписка у {uid} завершена, удалён из канала.")
             except TelegramBadRequest as e:
+
                 logging.warning(
                     f"[subscription_cleaner] TelegramBadRequest для {uid}: {e}"
                 )
+
+                logging.warning(f"[subscription_cleaner] TelegramBadRequest для {uid}: {e}")
+
         await asyncio.sleep(3600)
 
 
