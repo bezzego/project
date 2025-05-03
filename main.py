@@ -16,7 +16,10 @@ from bot_handlers import router
 from yoomoney import Client
 
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
+
+import requests
+from aiogram.exceptions import TelegramBadRequest
 
 # Логирование
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -43,20 +46,25 @@ async def payment_checker():
                     if getattr(op, "status", None) == "success":
                         # помечаем платёж, активируем подписку и шлём ссылку
                         mark_payment_success(label, op.operation_id)
-                        new_end = add_or_update_subscription(user_id)
+                        add_or_update_subscription(user_id)
                         # разовая пригласительная ссылка
                         link = await bot.create_chat_invite_link(
                             chat_id=config.CHANNEL_ID, member_limit=1
                         )
                         await bot.send_message(
                             user_id,
-                            "✅ Оплата принята, твоя подписка активирована!\n"
-                            "Вступай в канал по ссылке:\n" + link.invite_link,
+                            (
+                                "✅ Оплата принята, твоя подписка активирована!\n"
+                                f"Вступай в канал по ссылке:\n{link.invite_link}\n"
+                                "Нажми /start, чтобы продлить или посмотреть статус подписки"
+                            ),
                         )
                         logging.info(f"Пользователь {user_id} оплатил, ссылка выдана.")
                         break
-            except Exception as e:
-                logging.warning(f"[payment_checker] Ошибка для {label}: {e}")
+            except requests.exceptions.RequestException as e:
+                logging.warning(
+                    f"[payment_checker] Ошибка сети при проверке {label}: {e}"
+                )
         await asyncio.sleep(config.CHECK_INTERVAL)
 
 
@@ -74,8 +82,10 @@ async def subscription_cleaner():
                     uid, "⏰ Ваша подписка истекла. Чтобы продлить — /start"
                 )
                 logging.info(f"Подписка у {uid} завершена, удалён из канала.")
-            except Exception as e:
-                logging.warning(f"[subscription_cleaner] Не смог удалить {uid}: {e}")
+            except TelegramBadRequest as e:
+                logging.warning(
+                    f"[subscription_cleaner] TelegramBadRequest для {uid}: {e}"
+                )
         await asyncio.sleep(3600)
 
 
@@ -106,7 +116,7 @@ async def reminder_task():
                     f"⚠️ Ваша подписка истекает {end_date} — осталось меньше 2 дней.\n"
                     "Чтобы не потерять доступ, продлите её командой /start",
                 )
-            except Exception:
+            except TelegramBadRequest:
                 pass
             cur.execute(
                 "UPDATE subscriptions SET reminded=1 WHERE user_id = ?", (user_id,)
