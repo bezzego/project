@@ -1,5 +1,5 @@
-# bot_handlers.py
 from aiogram import Router, types
+from yoomoney import Quickpay
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 import uuid
@@ -27,12 +27,11 @@ async def cmd_start(message: types.Message):
         f"👋 Привет! Подписка на канал:\n"
         f"• Стоимость: {config.SUB_PRICE} ₽\n"
         f"• Длительность: {config.SUB_DURATION_DAYS} дней\n\n"
-        "Нажми кнопку ниже, чтобы оплатить."
+        "Нажми кнопку ниже, чтобы оплатить"
     )
     # генерируем уникальную метку
     label = f"{user_id}_{uuid.uuid4().hex}"
     # создаем ссылку YooMoney
-    from yoomoney import Quickpay
 
     qp = Quickpay(
         receiver=config.YOOMONEY_WALLET,
